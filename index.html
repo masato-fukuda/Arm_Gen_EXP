@@ -188,6 +188,11 @@
         <div id="eval-screen" class="screen">
             <div class="progress" id="progress-text">1 / 15本目</div>
 
+            <div id="instruction-container"
+                style="margin-bottom: 20px; padding: 15px; background-color: #e8f4fd; border-left: 5px solid #3498db; text-align: left; font-size: 16px;">
+                <span style="font-weight: bold; color: #2c3e50;">動作指示：</span><span id="instruction-text"></span>
+            </div>
+
             <div class="video-container">
                 <!-- 動画プレイヤー -->
                 <video id="video-player" autoplay loop muted playsinline>
@@ -196,21 +201,26 @@
             </div>
 
             <div class="evaluation-group">
-                <label>評価項目1: 指示内容と合致しているか</label>
+                <label>1. 生成されたモーションは、モーションの品質に関わらず、動作指示にどれだけ従っているか</label>
                 <div class="range-labels">
-                    <span>1: 合致しない</span>
-                    <span>2: どちらとも言えない</span>
-                    <span>3: 合致している</span>
+                    <span>1: 完全に異なる</span>
+                    <span>2: 一部のみ従っている</span>
+                    <span>3: 完全に従っている</span>
                 </div>
                 <input type="range" id="score1" min="1" max="3" value="2" step="1">
             </div>
 
             <div class="evaluation-group">
-                <label>評価項目2: 動作の自然さ</label>
+                <label>2. 動作指示に従っているかに関わらず、生成されたモーションの品質はどうか</label>
+                <div style="font-size: 13px; color: #555; margin-bottom: 8px;">
+                    1点: 深刻な問題がある（自己交差、非現実的なポーズや動きなど）<br>
+                    2点: 軽微な問題がある（あり得る動きだが人間らしくないなど）<br>
+                    3点: 問題がない
+                </div>
                 <div class="range-labels">
-                    <span>1: 不自然</span>
-                    <span>2: どちらとも言えない</span>
-                    <span>3: 自然</span>
+                    <span>1: 深刻な問題</span>
+                    <span>2: 軽微な問題</span>
+                    <span>3: 問題なし</span>
                 </div>
                 <input type="range" id="score2" min="1" max="3" value="2" step="1">
             </div>
@@ -255,6 +265,53 @@
 
         // GASに送信する評価結果を保持する配列
         let evaluationResults = [];
+        let idTextData = {}; // CSVからのテキストデータを保持
+
+        // CSVのパース関数
+        function parseCSV(text) {
+            const result = [];
+            const lines = text.split('\n');
+            for (let line of lines) {
+                line = line.trim();
+                if (!line) continue;
+                const row = [];
+                let inQuotes = false;
+                let currentVal = '';
+                for (let i = 0; i < line.length; i++) {
+                    const char = line[i];
+                    if (char === '"') {
+                        inQuotes = !inQuotes;
+                    } else if (char === ',' && !inQuotes) {
+                        row.push(currentVal.replace(/^"|"$/g, '').trim());
+                        currentVal = '';
+                    } else {
+                        currentVal += char;
+                    }
+                }
+                row.push(currentVal.replace(/^"|"$/g, '').trim());
+                result.push(row);
+            }
+            return result;
+        }
+
+        // 起動時にCSVを読み込む
+        fetch('ID_Text.csv')
+            .then(res => res.text())
+            .then(text => {
+                const rows = parseCSV(text);
+                for (let i = 1; i < rows.length; i++) {
+                    const row = rows[i];
+                    if (row.length >= 4) {
+                        const id = row[0];
+                        idTextData[id] = {
+                            'A': row[1],
+                            'B': row[2],
+                            'C': row[3]
+                        };
+                    }
+                }
+            })
+            .catch(err => console.error('CSV fetch error:', err));
 
         // ==========================================
         // DOM要素
@@ -330,6 +387,14 @@
 
             videoPlayer.src = videoSrc;
             videoPlayer.play().catch(e => console.warn('Autoplay error:', e));
+
+            // 動作指示テキストの表示
+            const instructionSpan = document.getElementById('instruction-text');
+            if (idTextData[currentMainFolder] && idTextData[currentMainFolder][currentSubfolder]) {
+                instructionSpan.textContent = idTextData[currentMainFolder][currentSubfolder];
+            } else {
+                instructionSpan.textContent = "（テキスト取得エラー）";
+            }
 
             // 進捗の更新
             progressText.textContent = `${overallVideoCount} / ${TOTAL_VIDEOS}本目`;
