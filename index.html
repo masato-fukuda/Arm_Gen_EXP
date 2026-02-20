@@ -231,6 +231,7 @@
             </div>
 
             <button id="next-btn">次に進む</button>
+            <div id="debug-filename" style="text-align: right; color: #ccc; font-size: 12px; margin-top: 5px;"></div>
         </div>
 
         <!-- 3. 送信中画面 -->
@@ -392,6 +393,9 @@
 
             videoPlayer.src = videoSrc;
             videoPlayer.play().catch(e => console.warn('Autoplay error:', e));
+
+            // デバッグ用ファイル名の表示
+            document.getElementById('debug-filename').textContent = `${prefix}${VIDEO_EXT}`;
 
             // 動作指示テキストの表示
             const instructionSpan = document.getElementById('instruction-text');
