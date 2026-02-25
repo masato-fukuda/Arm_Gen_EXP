@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>動作評価実験アンケート</title>
+    <title>[実験2]動作評価実験アンケート</title>
     <style>
         /* 共通スタイル */
         body {
@@ -162,26 +162,42 @@
         <div id="top-screen" class="screen active">
             <h1>動作評価実験アンケート</h1>
             <p class="description">
-                この実験では、言語指示に基づいて生成された3Dアバターの動作を主観的に評価していただきます。<br><br>
+                この実験では、言語指示に基づいて生成された3Dアバターの動作を主観的に評価していただきます。<br>
+                画面上部に表示される動作指示を読み、アバターの動作が指示通りであるか、また自然な動作であるかをスライドバーを操作して評価してください。<br><br>
                 評価項目：<br>
                 1. 言語の指示内容と正しく合致しているか<br>
                 2. アバターの動作自体が自然であるか<br><br>
-                割り当てられたメインフォルダを選択し、「アンケートに進む」をクリックしてください。
+                割り当てられたメインフォルダ(参加者ID)を選択し、「練習タスクに進む」をクリックしてください。
             </p>
             <select id="main-folder-select">
                 <option value="" disabled selected>メインフォルダを選択</option>
                 <option value="A-1">A-1</option>
                 <option value="A-2">A-2</option>
-                <option value="B-1">B-1</option>
-                <option value="B-2">B-2</option>
-                <option value="C-1">C-1</option>
-                <option value="C-2">C-2</option>
-                <option value="D-1">D-1</option>
-                <option value="D-2">D-2</option>
-                <option value="E-1">E-1</option>
-                <option value="E-2">E-2</option>
+                <option value="A-3">A-3</option>
+                <option value="A-4">A-4</option>
+                <option value="A-5">A-5</option>
+                <option value="A-6">A-6</option>
+                <option value="A-7">A-7</option>
+                <option value="A-8">A-8</option>
+                <option value="A-9">A-9</option>
+                <option value="A-10">A-10</option>
+                <option value="A-11">A-11</option>
+                <option value="A-12">A-12</option>
+                <option value="A-13">A-13</option>
+                <option value="A-14">A-14</option>
+                <option value="A-15">A-15</option>
             </select>
-            <button id="start-btn" disabled>アンケートに進む</button>
+            <button id="start-btn" disabled>練習タスクに進む</button>
+        </div>
+
+        <!-- 中間画面 (練習タスク終了後) -->
+        <div id="start-real-screen" class="screen">
+            <h1>練習タスクが終了しました</h1>
+            <p class="description">
+                ここから本番のアンケート（計15本）を開始します。<br>
+                準備ができましたら、下のボタンをクリックして開始してください。
+            </p>
+            <button id="start-real-btn">本番を開始する</button>
         </div>
 
         <!-- 2. 評価画面 -->
@@ -263,6 +279,9 @@
         // 状態管理変数
         // ==========================================
         let currentMainFolder = '';
+        let isPracticeMode = true;
+
+        // 本番用変数
         let shuffledSubfolders = [];
         let currentSubfolderIndex = 0;
         let shuffledVideoIndices = [];
@@ -305,14 +324,16 @@
             .then(res => res.text())
             .then(text => {
                 const rows = parseCSV(text);
+                // フォーマット: ID, 練習, 動作指示A, 動作指示B, 動作指示C
                 for (let i = 1; i < rows.length; i++) {
                     const row = rows[i];
-                    if (row.length >= 4) {
+                    if (row.length >= 5) {
                         const id = row[0];
                         idTextData[id] = {
-                            'A': row[1],
-                            'B': row[2],
-                            'C': row[3]
+                            'Practice': row[1],
+                            'A': row[2],
+                            'B': row[3],
+                            'C': row[4]
                         };
                     }
                 }
@@ -324,11 +345,13 @@
         // ==========================================
         const topScreen = document.getElementById('top-screen');
         const evalScreen = document.getElementById('eval-screen');
+        const startRealScreen = document.getElementById('start-real-screen');
         const loadingScreen = document.getElementById('loading-screen');
         const endScreen = document.getElementById('end-screen');
 
         const mainFolderSelect = document.getElementById('main-folder-select');
         const startBtn = document.getElementById('start-btn');
+        const startRealBtn = document.getElementById('start-real-btn');
         const nextBtn = document.getElementById('next-btn');
 
         const progressText = document.getElementById('progress-text');
@@ -380,33 +403,42 @@
          * 現在評価する動画を読み込み・UIのリセットを行う
          */
         function loadCurrentVideo() {
-            const currentSubfolder = shuffledSubfolders[currentSubfolderIndex];
-            const videoNumber = shuffledVideoIndices[currentVideoIndexInSubfolder];
+            let videoSrc = '';
+            let instructionText = '（テキスト取得エラー）';
+            let progressDisplayText = '';
 
-            // パスの組み立て
-            // 例: メインフォルダが "A-1" ならディレクトリは "A-1" だが、
-            // ファイル名は "A01", "B01" のように接頭辞が変わる可能性があるため、
-            // メインフォルダの最初の文字(A〜E)と "01" (固定値として扱うか、動的にするか)
-            // ここでは確認されたファイル名に則り、サブフォルダ名(A, B, C) + "01_s000_v00" + 数字 の形式とする
-            const prefix = currentSubfolder + "01_s000_v00" + videoNumber;
-            const videoSrc = `${currentMainFolder}/${currentSubfolder}/${prefix}${VIDEO_EXT}`;
+            if (isPracticeMode) {
+                // 練習タスクのパス
+                videoSrc = `practice/practice.mp4`;
+                progressDisplayText = `練習タスク`;
+                document.getElementById('debug-filename').textContent = `practice.mp4`;
+
+                if (idTextData[currentMainFolder] && idTextData[currentMainFolder]['Practice']) {
+                    instructionText = idTextData[currentMainFolder]['Practice'];
+                }
+            } else {
+                // 本番タスクのパス
+                const currentSubfolder = shuffledSubfolders[currentSubfolderIndex];
+                const videoNumber = shuffledVideoIndices[currentVideoIndexInSubfolder];
+
+                const prefix = currentSubfolder + "01_s000_v00" + videoNumber;
+                videoSrc = `${currentMainFolder}/${currentSubfolder}/${prefix}${VIDEO_EXT}`;
+                progressDisplayText = `${overallVideoCount} / ${TOTAL_VIDEOS}本目`;
+                document.getElementById('debug-filename').textContent = `${prefix}${VIDEO_EXT}`;
+
+                if (idTextData[currentMainFolder] && idTextData[currentMainFolder][currentSubfolder]) {
+                    instructionText = idTextData[currentMainFolder][currentSubfolder];
+                }
+            }
 
             videoPlayer.src = videoSrc;
             videoPlayer.play().catch(e => console.warn('Autoplay error:', e));
 
-            // デバッグ用ファイル名の表示
-            document.getElementById('debug-filename').textContent = `${prefix}${VIDEO_EXT}`;
-
             // 動作指示テキストの表示
-            const instructionSpan = document.getElementById('instruction-text');
-            if (idTextData[currentMainFolder] && idTextData[currentMainFolder][currentSubfolder]) {
-                instructionSpan.textContent = idTextData[currentMainFolder][currentSubfolder];
-            } else {
-                instructionSpan.textContent = "（テキスト取得エラー）";
-            }
+            document.getElementById('instruction-text').textContent = instructionText;
 
             // 進捗の更新
-            progressText.textContent = `${overallVideoCount} / ${TOTAL_VIDEOS}本目`;
+            progressText.textContent = progressDisplayText;
 
             // スライダーをデフォルト（中央）に戻す
             score1Input.value = "2";
@@ -453,9 +485,19 @@
             }
         });
 
-        // 「アンケートに進む」ボタン
+        // 「練習タスクに進む」ボタン
         startBtn.addEventListener('click', () => {
             currentMainFolder = mainFolderSelect.value;
+
+            // 練習モードの開始
+            isPracticeMode = true;
+            loadCurrentVideo();
+            showScreen(evalScreen);
+        });
+
+        // 「本番を開始する」ボタン
+        startRealBtn.addEventListener('click', () => {
+            isPracticeMode = false;
 
             // サブフォルダ [A, B, C] をランダムにシャッフル
             shuffledSubfolders = shuffleArray(SUB_FOLDERS);
@@ -469,6 +511,13 @@
 
         // 「次に進む」ボタン
         nextBtn.addEventListener('click', () => {
+            if (isPracticeMode) {
+                // 練習タスクの場合はデータを保存せずに中間画面へ遷移
+                showScreen(startRealScreen);
+                return;
+            }
+
+            // 以下、本番タスクの処理
             const currentSubfolder = shuffledSubfolders[currentSubfolderIndex];
             const videoNumber = shuffledVideoIndices[currentVideoIndexInSubfolder];
 
