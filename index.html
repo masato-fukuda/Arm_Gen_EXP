@@ -204,7 +204,7 @@
 
         <!-- 2. 評価画面 -->
         <div id="eval-screen" class="screen">
-            <div class="progress" id="progress-text">1 / 15本目</div>
+            <div class="progress" id="progress-text">セット 1 / 15 (動画 1 / 5)</div>
 
             <div id="instruction-container"
                 style="margin-bottom: 20px; padding: 15px; background-color: #e8f4fd; border-left: 5px solid #3498db; text-align: left; font-size: 16px;">
@@ -443,7 +443,7 @@
 
                 const prefix = currentSubfolder + "01_s000_v00" + videoNumber;
                 videoSrc = `${currentMainFolder}/${currentSubfolder}/${prefix}${VIDEO_EXT}`;
-                progressDisplayText = `${overallVideoCount} / ${TOTAL_VIDEOS}本目`;
+                progressDisplayText = `セット ${currentSubfolderIndex + 1} / ${shuffledSubfolders.length} (動画 ${currentVideoIndexInSubfolder + 1} / 5)`;
                 document.getElementById('debug-filename').textContent = `${prefix}${VIDEO_EXT}`;
 
                 if (idTextData[currentMainFolder] && idTextData[currentMainFolder][currentSubfolder]) {
