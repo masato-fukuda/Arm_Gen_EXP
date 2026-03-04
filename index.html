@@ -531,6 +531,8 @@
 
         // 「次に進む」ボタン
         nextBtn.addEventListener('click', () => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
             if (isPracticeMode) {
                 // 練習タスクの場合はデータを保存せずに中間画面へ遷移
                 showScreen(startRealScreen);
