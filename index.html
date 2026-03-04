@@ -430,7 +430,7 @@
             if (isPracticeMode) {
                 // 練習タスクのパス
                 videoSrc = `practice/practice.mp4`;
-                progressDisplayText = `練習タスク`;
+                progressDisplayText = `セット 1 / 4 (動画 1 / 1)`;
                 document.getElementById('debug-filename').textContent = `practice.mp4`;
 
                 if (idTextData[currentMainFolder] && idTextData[currentMainFolder]['Practice']) {
@@ -443,7 +443,7 @@
 
                 const prefix = currentSubfolder + "01_s000_v00" + videoNumber;
                 videoSrc = `${currentMainFolder}/${currentSubfolder}/${prefix}${VIDEO_EXT}`;
-                progressDisplayText = `セット ${currentSubfolderIndex + 1} / ${shuffledSubfolders.length} (動画 ${currentVideoIndexInSubfolder + 1} / 5)`;
+                progressDisplayText = `セット ${currentSubfolderIndex + 2} / 4 (動画 ${currentVideoIndexInSubfolder + 1} / 5)`;
                 document.getElementById('debug-filename').textContent = `${prefix}${VIDEO_EXT}`;
 
                 if (idTextData[currentMainFolder] && idTextData[currentMainFolder][currentSubfolder]) {
