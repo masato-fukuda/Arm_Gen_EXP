@@ -279,8 +279,13 @@
 
         <!-- 4. 終了画面 -->
         <div id="end-screen" class="screen">
-            <h1>ご協力ありがとうございました</h1>
-            <p>データは正常に保存されました。<br>このウィンドウ（タブ）を閉じて終了してください。</p>
+            <h1 id="end-title">ご協力ありがとうございました</h1>
+            <p id="end-message">データは正常に保存されました。<br>このウィンドウ（タブ）を閉じて終了してください。</p>
+            <div id="fallback-download" style="display: none; margin-top: 20px;">
+                <p style="color: red; font-weight: bold;">※ データの送信に一部失敗した可能性があります。</p>
+                <p>念のため、以下のボタンから結果データ（JSON）をダウンロードし、担当者へファイルをお送りください。</p>
+                <button id="download-btn" style="background-color: #dc3545;">結果データをダウンロード</button>
+            </div>
         </div>
     </div>
 
@@ -485,11 +490,26 @@
                 body: JSON.stringify(payload)
             })
                 .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
                     showScreen(endScreen);
                 })
                 .catch(error => {
                     console.error('通信エラー:', error);
-                    alert('通信エラーが発生しました。インターネット接続を確認してください。（' + error + '）');
+                    document.getElementById('end-title').innerText = "通信エラーが発生しました";
+                    document.getElementById('end-message').style.display = 'none';
+                    document.getElementById('fallback-download').style.display = 'block';
+
+                    document.getElementById('download-btn').onclick = () => {
+                        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `EXP2_results_${currentMainFolder}_${Date.now()}.json`;
+                        a.click();
+                        URL.revokeObjectURL(url);
+                    };
                     showScreen(endScreen);
                 });
         }
