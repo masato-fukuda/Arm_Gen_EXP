@@ -350,16 +350,16 @@
             .then(res => res.text())
             .then(text => {
                 const rows = parseCSV(text);
-                // フォーマット: ID, 練習, 動作指示A, 動作指示B, 動作指示C
-                for (let i = 1; i < rows.length; i++) {
+                // 新フォーマット: ID, 動作指示A, 動作指示B, 動作指示C (ヘッダーなし・練習用テキストなし)
+                for (let i = 0; i < rows.length; i++) {
                     const row = rows[i];
-                    if (row.length >= 5) {
+                    if (row.length >= 4) {
                         const id = row[0];
                         idTextData[id] = {
-                            'Practice': row[1],
-                            'A': row[2],
-                            'B': row[3],
-                            'C': row[4]
+                            'Practice': '右手を広げて、顔の横でゆっくりと振ってください。（※練習用ダミーテキスト）',
+                            'A': row[1],
+                            'B': row[2],
+                            'C': row[3]
                         };
                     }
                 }
