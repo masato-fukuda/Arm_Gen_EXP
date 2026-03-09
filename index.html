@@ -447,7 +447,8 @@
                 const currentSubfolder = shuffledSubfolders[currentSubfolderIndex];
                 const videoNumber = shuffledVideoIndices[currentVideoIndexInSubfolder];
 
-                const prefix = currentSubfolder + "01_s000_v00" + videoNumber;
+                // const prefix = currentSubfolder + "01_s000_v00" + videoNumber;
+                const prefix = currentMainFolder + "_" + currentSubfolder + "_s000_v00" + videoNumber;
                 videoSrc = `${currentMainFolder}/${currentSubfolder}/${prefix}${VIDEO_EXT}`;
                 progressDisplayText = `セット ${currentSubfolderIndex + 2} / 4 (動画 ${currentVideoIndexInSubfolder + 1} / 5)`;
                 document.getElementById('debug-filename').textContent = `${prefix}${VIDEO_EXT}`;
